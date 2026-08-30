@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
   const params = new URLSearchParams();
   const countryId = request.nextUrl.searchParams.get("country_id");
   if (countryId) params.set("country_id", countryId);
+  const companyId = request.nextUrl.searchParams.get("company_id");
+  if (companyId) params.set("company_id", companyId);
 
   const res = await fetch(`${API_URL}/api/v1/recipients?${params}`, {
     headers: { Authorization: `Bearer ${token}` },

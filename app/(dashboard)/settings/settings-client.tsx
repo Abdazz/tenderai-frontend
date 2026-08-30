@@ -21,12 +21,16 @@ interface Props {
   sections: Record<string, Record<string, unknown>>;
   readonly: Record<string, unknown>;
   countryId?: number;
+  companyId?: number;
 }
 
-export function SettingsClient({ sections, readonly, countryId }: Props) {
+export function SettingsClient({ sections, readonly, countryId, companyId }: Props) {
   const [active, setActive] = useState<Tab>("Pipeline");
 
   function saveUrl(section: string): string {
+    if (companyId !== undefined && (section === "classification" || section === "scheduler" || section === "email")) {
+      return `/api/proxy/companies/${companyId}/settings/${section}`;
+    }
     if (countryId !== undefined) {
       return `/api/proxy/countries/${countryId}/settings/${section}`;
     }
@@ -76,7 +80,7 @@ export function SettingsClient({ sections, readonly, countryId }: Props) {
         />
       )}
       {active === "Destinataires" && (
-        <RecipientsSection countryId={countryId} />
+        <RecipientsSection countryId={countryId} companyId={companyId} />
       )}
       {active === "RAG" && sections.rag && (
         <RAGSection

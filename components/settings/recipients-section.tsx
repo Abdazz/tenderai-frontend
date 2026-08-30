@@ -10,17 +10,20 @@ import type { RecipientOut } from "@/lib/api";
 
 const GROUP_LABELS: Record<string, string> = { to: "À", cc: "CC", bcc: "BCC", default: "—" };
 
-interface Props { countryId?: number; }
+interface Props { countryId?: number; companyId?: number; }
 
-export function RecipientsSection({ countryId }: Props) {
+export function RecipientsSection({ countryId, companyId }: Props) {
   const [recipients, setRecipients] = useState<RecipientOut[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     try {
-      const params = countryId !== undefined ? `?country_id=${countryId}` : "";
-      const res = await fetch(`/api/proxy/recipients${params}`);
+      const params = new URLSearchParams();
+      if (countryId !== undefined) params.set("country_id", String(countryId));
+      if (companyId !== undefined) params.set("company_id", String(companyId));
+      const qs = params.toString();
+      const res = await fetch(`/api/proxy/recipients${qs ? `?${qs}` : ""}`);
       if (res.ok) {
         const data = await res.json();
         setRecipients(data.recipients ?? []);
@@ -30,13 +33,13 @@ export function RecipientsSection({ countryId }: Props) {
     }
   }
 
-  useEffect(() => { load(); }, [countryId]);
+  useEffect(() => { load(); }, [countryId, companyId]);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Destinataires</CardTitle>
-        <RecipientFormDialog onSaved={load} countryId={countryId} />
+        <RecipientFormDialog onSaved={load} countryId={countryId} companyId={companyId} />
       </CardHeader>
       <CardContent>
         {loading ? (

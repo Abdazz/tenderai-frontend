@@ -20,11 +20,12 @@ interface Props {
   trigger?: React.ReactElement;
   onSaved: () => void;
   countryId?: number;
+  companyId?: number;
 }
 
 const empty = { email: "", name: "", group: "to", enabled: true };
 
-export function RecipientFormDialog({ recipient, trigger, onSaved, countryId }: Props) {
+export function RecipientFormDialog({ recipient, trigger, onSaved, countryId, companyId }: Props) {
   const isEdit = !!recipient;
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...empty });
@@ -56,7 +57,14 @@ export function RecipientFormDialog({ recipient, trigger, onSaved, countryId }: 
 
     const payload = isEdit
       ? { name: form.name || null, group: form.group, enabled: form.enabled }
-      : { email: form.email, name: form.name || null, group: form.group, enabled: form.enabled, country_id: countryId ?? null };
+      : {
+          email: form.email,
+          name: form.name || null,
+          group: form.group,
+          enabled: form.enabled,
+          country_id: countryId ?? null,
+          company_id: companyId ?? null,
+        };
 
     try {
       const res = await fetch(url, {
