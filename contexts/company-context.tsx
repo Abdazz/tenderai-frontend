@@ -18,6 +18,7 @@ type CompanyContextValue = {
   setSelectedCompany: (c: Company) => void;
   loading: boolean;
   isSuperAdmin: boolean;
+  error: string | null;
 };
 
 const CompanyContext = createContext<CompanyContextValue>({
@@ -26,6 +27,7 @@ const CompanyContext = createContext<CompanyContextValue>({
   setSelectedCompany: () => {},
   loading: true,
   isSuperAdmin: false,
+  error: null,
 });
 
 interface CompanyProviderProps {
@@ -39,35 +41,69 @@ export function CompanyProvider({ children, fixedCompanyId, isSuperAdmin }: Comp
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/proxy/companies")
-      .then((r) => r.json())
-      .then((data: Company[]) => {
-        const active = Array.isArray(data) ? data.filter((c) => c.active) : [];
-        setCompanies(active);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-        if (fixedCompanyId) {
-          // Non-super_admin: lock to their assigned company. Fail closed —
-          // if the JWT's company_id doesn't resolve, selectedCompany stays
-          // null rather than silently falling back to another company.
-          const found = active.find((c) => c.id === fixedCompanyId) ?? null;
-          setSelectedCompanyState(found);
-        } else {
-          // super_admin: restore from localStorage or pick first
+    async function load() {
+      try {
+        if (isSuperAdmin) {
+          // super_admin: GET /api/v1/admin/companies (SuperAdminUser-only)
+          // returns the full company list.
+          const res = await fetch("/api/proxy/companies");
+          const data = await res.json();
+          if (cancelled) return;
+
+          const active = Array.isArray(data) ? data.filter((c: Company) => c.active) : [];
+          setCompanies(active);
+
           const storedId = typeof window !== "undefined"
             ? Number(localStorage.getItem("selectedCompanyId"))
             : 0;
           const found = active.find((c) => c.id === storedId) ?? active[0] ?? null;
           setSelectedCompanyState(found);
+        } else if (fixedCompanyId) {
+          // Non-super_admin: GET /api/v1/admin/companies/{id} is
+          // CompanyScopedUser (a company-scoped user can read their own
+          // company) — fetch only that one company instead of the list.
+          const res = await fetch(`/api/proxy/companies/${fixedCompanyId}`);
+          const data = await res.json();
+          if (cancelled) return;
+
+          const company: Company | null =
+            res.ok && data && typeof data.id === "number" && data.active ? data : null;
+          const active = company ? [company] : [];
+          setCompanies(active);
+          // Fail closed — if the single-company fetch didn't resolve to an
+          // active company, selectedCompany stays null rather than falling
+          // back to another company.
+          setSelectedCompanyState(active.find((c) => c.id === fixedCompanyId) ?? null);
+        } else {
+          // Non-super_admin with no company_id claim (legacy/bad token).
+          // Fail closed: never fall back to the super_admin auto-assign path.
+          setCompanies([]);
+          setSelectedCompanyState(null);
         }
-      })
-      .catch(() => setCompanies([]))
-      .finally(() => setLoading(false));
-  }, [fixedCompanyId]);
+      } catch {
+        if (!cancelled) {
+          setCompanies([]);
+          setSelectedCompanyState(null);
+          setError("Impossible de charger les compagnies.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [fixedCompanyId, isSuperAdmin]);
 
   function setSelectedCompany(c: Company) {
-    if (fixedCompanyId) return; // locked for non-super_admin
+    if (!isSuperAdmin) return; // locked for non-super_admin
     setSelectedCompanyState(c);
     if (typeof window !== "undefined") {
       localStorage.setItem("selectedCompanyId", String(c.id));
@@ -75,7 +111,7 @@ export function CompanyProvider({ children, fixedCompanyId, isSuperAdmin }: Comp
   }
 
   return (
-    <CompanyContext.Provider value={{ companies, selectedCompany, setSelectedCompany, loading, isSuperAdmin }}>
+    <CompanyContext.Provider value={{ companies, selectedCompany, setSelectedCompany, loading, isSuperAdmin, error }}>
       {children}
     </CompanyContext.Provider>
   );
