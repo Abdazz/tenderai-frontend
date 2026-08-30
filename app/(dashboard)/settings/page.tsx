@@ -14,45 +14,57 @@ export default function SettingsPage() {
   useEffect(() => {
     if (countryLoading || companyLoading) return;
 
+    let cancelled = false;
     setLoading(true);
-    const baseUrl = selectedCountry
-      ? `/api/proxy/countries/${selectedCountry.id}/settings`
-      : "/api/proxy/settings";
 
-    const fetches: Promise<void>[] = [
-      fetch(baseUrl)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((body) => {
-          if (body === null) return;
-          if (selectedCountry) {
-            setSettings((prev) => ({ sections: { ...prev.sections, ...body }, readonly: prev.readonly }));
-          } else {
-            setSettings((prev) => ({
-              sections: { ...prev.sections, ...(body.sections ?? {}) },
-              readonly: body.readonly ?? {},
-            }));
-          }
-        }),
-    ];
+    async function loadSettings() {
+      const baseUrl = selectedCountry
+        ? `/api/proxy/countries/${selectedCountry!.id}/settings`
+        : "/api/proxy/settings";
 
-    if (selectedCompany) {
-      fetches.push(
-        fetch(`/api/proxy/companies/${selectedCompany.id}/settings`)
-          .then((r) => (r.ok ? r.json() : null))
-          .then((body) => {
-            if (body === null) return;
+      try {
+        const baseRes = await fetch(baseUrl);
+        const baseBody = baseRes.ok ? await baseRes.json() : null;
+        if (cancelled) return;
+
+        let sections: Record<string, Record<string, unknown>>;
+        let readonly: Record<string, unknown>;
+        if (baseBody === null) {
+          sections = {};
+          readonly = {};
+        } else if (selectedCountry) {
+          sections = baseBody;
+          readonly = {};
+        } else {
+          sections = baseBody.sections ?? {};
+          readonly = baseBody.readonly ?? {};
+        }
+
+        if (selectedCompany) {
+          const companyRes = await fetch(`/api/proxy/companies/${selectedCompany.id}/settings`);
+          const companyBody = companyRes.ok ? await companyRes.json() : null;
+          if (cancelled) return;
+          if (companyBody !== null) {
             // Company settings only cover classification/scheduler/email —
             // merge those keys over the country/global values so the 3
             // company-scoped tabs show company data while the other 5
             // (pipeline/llm/rag/prompts) keep showing country/global data.
-            setSettings((prev) => ({ sections: { ...prev.sections, ...body }, readonly: prev.readonly }));
-          })
-      );
+            // This overlay is applied strictly after the base bundle above,
+            // so response ordering between the two fetches can't matter.
+            sections = { ...sections, ...companyBody };
+          }
+        }
+
+        if (!cancelled) setSettings({ sections, readonly });
+      } catch {
+        if (!cancelled) setSettings({ sections: {}, readonly: {} });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
-    Promise.all(fetches)
-      .catch(() => setSettings({ sections: {}, readonly: {} }))
-      .finally(() => setLoading(false));
+    loadSettings();
+    return () => { cancelled = true; };
   }, [selectedCountry?.id, countryLoading, selectedCompany?.id, companyLoading]);
 
   if (loading || countryLoading || companyLoading) return <p className="text-slate-500">Chargement...</p>;
