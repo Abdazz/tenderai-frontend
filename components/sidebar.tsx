@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { CountrySelector } from "@/components/country-selector";
+import { CompanySelector } from "@/components/company-selector";
 import { useCountry } from "@/contexts/country-context";
+import { useCompany } from "@/contexts/company-context";
 
 const baseLinks = [
   { href: "/", label: "Dashboard" },
@@ -32,6 +34,7 @@ export function Sidebar({ role, username }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { selectedCountry } = useCountry();
+  const { selectedCompany } = useCompany();
   const links = role === "super_admin"
     ? [...baseLinks, ...superAdminLinks, ...bottomLinks]
     : [...baseLinks, ...bottomLinks];
@@ -64,13 +67,26 @@ export function Sidebar({ role, username }: SidebarProps) {
         ))}
       </nav>
       {role === "super_admin" ? (
-        <CountrySelector />
-      ) : selectedCountry ? (
-        <div className="px-4 py-3 border-t border-slate-700">
-          <p className="text-xs text-slate-500 mb-1">Pays</p>
-          <p className="text-sm text-slate-200 font-medium truncate">{selectedCountry.name}</p>
-        </div>
-      ) : null}
+        <>
+          <CompanySelector />
+          <CountrySelector />
+        </>
+      ) : (
+        <>
+          {selectedCompany ? (
+            <div className="px-4 py-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-1">Compagnie</p>
+              <p className="text-sm text-slate-200 font-medium truncate">{selectedCompany.name}</p>
+            </div>
+          ) : null}
+          {selectedCountry ? (
+            <div className="px-4 py-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-1">Pays</p>
+              <p className="text-sm text-slate-200 font-medium truncate">{selectedCountry.name}</p>
+            </div>
+          ) : null}
+        </>
+      )}
       <div className="p-4 border-t border-slate-700">
         <button
           onClick={handleLogout}
