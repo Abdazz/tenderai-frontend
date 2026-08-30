@@ -57,8 +57,8 @@ export default function ReportsPage() {
                     <Badge variant="default">{run.status}</Badge>
                   </td>
                   <td>
-                    <Badge variant={run.run_type === "harvest" ? "secondary" : "outline"}>
-                      {run.run_type === "harvest" ? "Collecte" : "Livraison"}
+                    <Badge variant={run.run_type === "harvest" ? "secondary" : run.run_type === "delivery" ? "outline" : "outline"}>
+                      {run.run_type === "harvest" ? "Collecte" : run.run_type === "delivery" ? "Livraison" : "—"}
                     </Badge>
                   </td>
                   <td>
