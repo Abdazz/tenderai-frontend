@@ -131,7 +131,7 @@ export function CreateUserDialog({ onCreated }: Props) {
             <select
               id="new-role"
               value={role}
-              onChange={(e) => { setRole(e.target.value as typeof role); setCountryId(""); }}
+              onChange={(e) => { setRole(e.target.value as typeof role); setCountryId(""); setCompanyId(""); }}
               className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
             >
               <option value="company_viewer">Company Viewer</option>
