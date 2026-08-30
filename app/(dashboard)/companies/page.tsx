@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type Company = {
@@ -19,11 +19,14 @@ export default function CompaniesPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [allCountries, setAllCountries] = useState<Country[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const expandRequestRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetch("/api/proxy/companies")
       .then((r) => r.json())
       .then((data) => setCompanies(Array.isArray(data) ? data : []))
+      .catch(() => setError("Impossible de charger les compagnies."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -44,15 +47,22 @@ export default function CompaniesPage() {
       return;
     }
     setExpandedId(company.id);
+    const requestId = company.id;
+    expandRequestRef.current = requestId;
+
     const [countriesRes, subsRes] = await Promise.all([
       fetch("/api/proxy/countries"),
       fetch(`/api/proxy/companies/${company.id}/countries`),
     ]);
+
+    if (expandRequestRef.current !== requestId) return; // a newer expand superseded this one
+
     setAllCountries(countriesRes.ok ? await countriesRes.json() : []);
     setSubscriptions(subsRes.ok ? await subsRes.json() : []);
   }
 
   async function toggleSubscription(companyId: number, countryId: number, currentlyEnabled: boolean) {
+    const requestId = companyId;
     if (currentlyEnabled) {
       await fetch(`/api/proxy/companies/${companyId}/countries/${countryId}`, { method: "DELETE" });
     } else {
@@ -63,6 +73,7 @@ export default function CompaniesPage() {
       });
     }
     const subsRes = await fetch(`/api/proxy/companies/${companyId}/countries`);
+    if (expandRequestRef.current !== requestId) return; // a newer expansion superseded this toggle
     setSubscriptions(subsRes.ok ? await subsRes.json() : []);
   }
 
@@ -79,6 +90,8 @@ export default function CompaniesPage() {
           Ajouter une compagnie
         </Link>
       </div>
+
+      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
