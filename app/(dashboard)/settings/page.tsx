@@ -7,7 +7,7 @@ import { SettingsClient } from "./settings-client";
 
 export default function SettingsPage() {
   const { selectedCountry, loading: countryLoading } = useCountry();
-  const { selectedCompany, loading: companyLoading } = useCompany();
+  const { selectedCompany, loading: companyLoading, error: companyError } = useCompany();
   const [settings, setSettings] = useState<{ sections: Record<string, Record<string, unknown>>; readonly: Record<string, unknown> }>({ sections: {}, readonly: {} });
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +45,18 @@ export default function SettingsPage() {
           const companyBody = companyRes.ok ? await companyRes.json() : null;
           if (cancelled) return;
           if (companyBody !== null) {
-            // Company settings only cover classification/scheduler/email —
-            // merge those keys over the country/global values so the 3
-            // company-scoped tabs show company data while the other 5
-            // (pipeline/llm/rag/prompts) keep showing country/global data.
-            // This overlay is applied strictly after the base bundle above,
-            // so response ordering between the two fetches can't matter.
-            sections = { ...sections, ...companyBody };
+            // The company settings endpoint (get_all_with_fallback) returns
+            // EVERY global section — seed_from_global copies all of
+            // AppSettings into CompanySettings at company creation time, not
+            // just the sections a company can actually edit. Only
+            // classification/scheduler/email are meant to be company-scoped
+            // in this UI; whitelist the merge so Pipeline/LLM/RAG/Prompts
+            // keep showing country/global data untouched instead of being
+            // silently overwritten with global values from the company bundle.
+            const COMPANY_SCOPED_SECTIONS = ["classification", "scheduler", "email"] as const;
+            for (const key of COMPANY_SCOPED_SECTIONS) {
+              if (companyBody[key]) sections[key] = companyBody[key];
+            }
           }
         }
 
@@ -68,6 +73,10 @@ export default function SettingsPage() {
   }, [selectedCountry?.id, countryLoading, selectedCompany?.id, companyLoading]);
 
   if (loading || countryLoading || companyLoading) return <p className="text-slate-500">Chargement...</p>;
+
+  if (companyError) {
+    return <p className="text-red-600 text-sm">{companyError}</p>;
+  }
 
   return (
     <div className="space-y-6">
