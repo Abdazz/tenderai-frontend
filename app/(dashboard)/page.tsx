@@ -66,7 +66,7 @@ export default function DashboardPage() {
     }
   }
 
-  const canTrigger = role === "super_admin" || role === "admin";
+  const canTrigger = role === "super_admin" || role === "company_admin";
 
   return (
     <div className="space-y-6">

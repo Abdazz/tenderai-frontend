@@ -16,7 +16,7 @@ type CountryContextValue = {
   setSelectedCountry: (c: Country) => void;
   loading: boolean;
   isSuperAdmin: boolean;
-  role: "super_admin" | "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
 };
 
 const CountryContext = createContext<CountryContextValue>({
@@ -25,7 +25,7 @@ const CountryContext = createContext<CountryContextValue>({
   setSelectedCountry: () => {},
   loading: true,
   isSuperAdmin: false,
-  role: "viewer",
+  role: "company_viewer",
 });
 
 interface CountryProviderProps {
@@ -33,7 +33,7 @@ interface CountryProviderProps {
   /** For non-super_admin: the country_id from JWT. When set, selection is locked. */
   fixedCountryId?: number | null;
   isSuperAdmin: boolean;
-  role: "super_admin" | "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
 }
 
 export function CountryProvider({ children, fixedCountryId, isSuperAdmin, role }: CountryProviderProps) {

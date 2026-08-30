@@ -28,7 +28,7 @@ export function CreateUserDialog({ onCreated }: Props) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"super_admin" | "admin" | "viewer">("viewer");
+  const [role, setRole] = useState<"super_admin" | "company_admin" | "company_viewer">("company_viewer");
   const [countryId, setCountryId] = useState<string>("");
   const [countries, setCountries] = useState<Country[]>([]);
   const [error, setError] = useState("");
@@ -46,7 +46,7 @@ export function CreateUserDialog({ onCreated }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (role !== "super_admin" && !countryId) {
-      setError("Un pays est requis pour les rôles admin et viewer.");
+      setError("Un pays est requis pour les rôles company_admin et company_viewer.");
       return;
     }
     setLoading(true);
@@ -67,7 +67,7 @@ export function CreateUserDialog({ onCreated }: Props) {
       setOpen(false);
       setUsername("");
       setEmail("");
-      setRole("viewer");
+      setRole("company_viewer");
       setCountryId("");
       onCreated();
     } catch {
@@ -117,8 +117,8 @@ export function CreateUserDialog({ onCreated }: Props) {
               onChange={(e) => { setRole(e.target.value as typeof role); setCountryId(""); }}
               className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
             >
-              <option value="viewer">Viewer</option>
-              <option value="admin">Admin</option>
+              <option value="company_viewer">Company Viewer</option>
+              <option value="company_admin">Company Admin</option>
               <option value="super_admin">Super Admin</option>
             </select>
           </div>

@@ -23,7 +23,7 @@ const bottomLinks = [
 ];
 
 interface SidebarProps {
-  role: "super_admin" | "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
   username: string;
 }
 

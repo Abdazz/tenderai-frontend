@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const token = (await cookies()).get("auth_token")?.value;
   if (!token) redirect("/login");
 
-  let payload: { sub: string; role: "super_admin" | "admin" | "viewer"; country_id?: number | null };
+  let payload: { sub: string; role: "super_admin" | "company_admin" | "company_viewer"; country_id?: number | null };
   try {
     const result = await jwtVerify(token, JWT_SECRET);
     payload = result.payload as typeof payload;

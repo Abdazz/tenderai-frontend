@@ -29,7 +29,7 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
   expires_in: number;
-  role: "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
   password_reset_required: boolean;
 }
 
@@ -37,7 +37,7 @@ export interface UserOut {
   id: string;
   username: string;
   email: string;
-  role: "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
   is_active: boolean;
   password_reset_required: boolean;
 }

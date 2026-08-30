@@ -10,7 +10,7 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: "super_admin" | "admin" | "viewer";
+  role: "super_admin" | "company_admin" | "company_viewer";
   is_active: boolean;
   password_reset_required: boolean;
   country_id: number | null;
@@ -105,7 +105,7 @@ export default function UsersPage() {
                     <td className="py-3 font-medium">{user.username}</td>
                     <td className="text-slate-500">{user.email}</td>
                     <td>
-                      <Badge variant={user.role === "super_admin" ? "default" : user.role === "admin" ? "secondary" : "outline"}>
+                      <Badge variant={user.role === "super_admin" ? "default" : user.role === "company_admin" ? "secondary" : "outline"}>
                         {user.role}
                       </Badge>
                     </td>
