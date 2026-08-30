@@ -15,6 +15,7 @@ const baseLinks = [
 const superAdminLinks = [
   { href: "/users", label: "Utilisateurs" },
   { href: "/countries", label: "Pays" },
+  { href: "/companies", label: "Compagnies" },
 ];
 
 const bottomLinks = [
