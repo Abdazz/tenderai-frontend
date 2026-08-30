@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useCompany } from "@/contexts/company-context";
 
 export type Country = {
   id: number;
@@ -40,30 +41,51 @@ export function CountryProvider({ children, fixedCountryId, isSuperAdmin, role }
   const [countries, setCountries] = useState<Country[]>([]);
   const [selectedCountry, setSelectedCountryState] = useState<Country | null>(null);
   const [loading, setLoading] = useState(true);
+  const { selectedCompany, loading: companyLoading } = useCompany();
 
   useEffect(() => {
-    fetch("/api/proxy/countries")
-      .then((r) => r.json())
-      .then((data: Country[]) => {
-        const active = Array.isArray(data) ? data.filter((c) => c.active) : [];
-        setCountries(active);
+    if (companyLoading) return;
+    if (!selectedCompany) {
+      setCountries([]);
+      setSelectedCountryState(null);
+      setLoading(false);
+      return;
+    }
 
-        if (fixedCountryId) {
-          // Non-super_admin: lock to their assigned country
-          const found = active.find((c) => c.id === fixedCountryId) ?? null;
-          setSelectedCountryState(found);
-        } else {
-          // super_admin: restore from localStorage or pick first
-          const storedId = typeof window !== "undefined"
-            ? Number(localStorage.getItem("selectedCountryId"))
-            : 0;
-          const found = active.find((c) => c.id === storedId) ?? active[0] ?? null;
-          setSelectedCountryState(found);
-        }
+    setLoading(true);
+    fetch(`/api/proxy/companies/${selectedCompany.id}/countries`)
+      .then((r) => r.json())
+      .then((subs: { country_id: number; enabled: boolean }[]) => {
+        // The subscription endpoint returns {country_id, enabled} pairs, not
+        // full Country objects (see CompanyCountrySubscriptionRead on the
+        // backend) — cross-reference against the full catalog to get
+        // name/code/locale for display.
+        const subscribedIds = new Set(
+          (Array.isArray(subs) ? subs : []).filter((s) => s.enabled).map((s) => s.country_id)
+        );
+        fetch("/api/proxy/countries")
+          .then((r) => r.json())
+          .then((allCountries: Country[]) => {
+            const active = (Array.isArray(allCountries) ? allCountries : [])
+              .filter((c) => c.active && subscribedIds.has(c.id));
+            setCountries(active);
+
+            if (fixedCountryId) {
+              const found = active.find((c) => c.id === fixedCountryId) ?? null;
+              setSelectedCountryState(found);
+            } else {
+              const storedId = typeof window !== "undefined"
+                ? Number(localStorage.getItem("selectedCountryId"))
+                : 0;
+              const found = active.find((c) => c.id === storedId) ?? active[0] ?? null;
+              setSelectedCountryState(found);
+            }
+          })
+          .catch(() => setCountries([]));
       })
       .catch(() => setCountries([]))
       .finally(() => setLoading(false));
-  }, [fixedCountryId]);
+  }, [fixedCountryId, selectedCompany?.id, companyLoading]);
 
   function setSelectedCountry(c: Country) {
     if (fixedCountryId) return; // locked for non-super_admin

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { Sidebar } from "@/components/sidebar";
 import { CountryProvider } from "@/contexts/country-context";
+import { CompanyProvider } from "@/contexts/company-context";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET ?? "");
 
@@ -10,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const token = (await cookies()).get("auth_token")?.value;
   if (!token) redirect("/login");
 
-  let payload: { sub: string; role: "super_admin" | "company_admin" | "company_viewer"; country_id?: number | null };
+  let payload: { sub: string; role: "super_admin" | "company_admin" | "company_viewer"; country_id?: number | null; company_id?: number | null };
   try {
     const result = await jwtVerify(token, JWT_SECRET);
     payload = result.payload as typeof payload;
@@ -20,13 +21,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const isSuperAdmin = payload.role === "super_admin";
   const fixedCountryId = isSuperAdmin ? null : (payload.country_id ?? null);
+  const fixedCompanyId = isSuperAdmin ? null : (payload.company_id ?? null);
 
   return (
-    <CountryProvider isSuperAdmin={isSuperAdmin} fixedCountryId={fixedCountryId} role={payload.role}>
-      <div className="flex min-h-screen">
-        <Sidebar role={payload.role} username={payload.sub} />
-        <main className="flex-1 p-6 bg-slate-50">{children}</main>
-      </div>
-    </CountryProvider>
+    <CompanyProvider isSuperAdmin={isSuperAdmin} fixedCompanyId={fixedCompanyId}>
+      <CountryProvider isSuperAdmin={isSuperAdmin} fixedCountryId={fixedCountryId} role={payload.role}>
+        <div className="flex min-h-screen">
+          <Sidebar role={payload.role} username={payload.sub} />
+          <main className="flex-1 p-6 bg-slate-50">{children}</main>
+        </div>
+      </CountryProvider>
+    </CompanyProvider>
   );
 }
