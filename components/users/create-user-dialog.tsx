@@ -20,6 +20,11 @@ interface Country {
   code: string;
 }
 
+interface Company {
+  id: number;
+  name: string;
+}
+
 interface Props {
   onCreated: () => void;
 }
@@ -31,6 +36,8 @@ export function CreateUserDialog({ onCreated }: Props) {
   const [role, setRole] = useState<"super_admin" | "company_admin" | "company_viewer">("company_viewer");
   const [countryId, setCountryId] = useState<string>("");
   const [countries, setCountries] = useState<Country[]>([]);
+  const [companyId, setCompanyId] = useState<string>("");
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +47,10 @@ export function CreateUserDialog({ onCreated }: Props) {
         .then((r) => r.json())
         .then((data) => setCountries(Array.isArray(data) ? data : []))
         .catch(() => setCountries([]));
+      fetch("/api/proxy/companies")
+        .then((r) => r.json())
+        .then((data) => setCompanies(Array.isArray(data) ? data : []))
+        .catch(() => setCompanies([]));
     }
   }, [open]);
 
@@ -49,11 +60,16 @@ export function CreateUserDialog({ onCreated }: Props) {
       setError("Un pays est requis pour les rôles company_admin et company_viewer.");
       return;
     }
+    if (role !== "super_admin" && !companyId) {
+      setError("Une compagnie est requise pour les rôles company_admin et company_viewer.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const body: Record<string, unknown> = { username, email, role };
       if (role !== "super_admin" && countryId) body.country_id = Number(countryId);
+      if (role !== "super_admin" && companyId) body.company_id = Number(companyId);
       const res = await fetch("/api/proxy/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +85,7 @@ export function CreateUserDialog({ onCreated }: Props) {
       setEmail("");
       setRole("company_viewer");
       setCountryId("");
+      setCompanyId("");
       onCreated();
     } catch {
       setError("Erreur réseau.");
@@ -135,6 +152,23 @@ export function CreateUserDialog({ onCreated }: Props) {
                 <option value="">— Sélectionner un pays —</option>
                 {countries.map((c) => (
                   <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {role !== "super_admin" && (
+            <div className="space-y-2">
+              <Label htmlFor="new-company">Compagnie <span className="text-red-500">*</span></Label>
+              <select
+                id="new-company"
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+                required
+              >
+                <option value="">— Sélectionner une compagnie —</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>

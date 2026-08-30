@@ -14,6 +14,7 @@ interface User {
   is_active: boolean;
   password_reset_required: boolean;
   country_id: number | null;
+  company_id: number | null;
 }
 
 interface Country {
@@ -21,17 +22,24 @@ interface Country {
   name: string;
 }
 
+interface Company {
+  id: number;
+  name: string;
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [countryMap, setCountryMap] = useState<Record<number, string>>({});
+  const [companyMap, setCompanyMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
 
   async function loadUsers() {
     setLoading(true);
     try {
-      const [usersRes, countriesRes] = await Promise.all([
+      const [usersRes, countriesRes, companiesRes] = await Promise.all([
         fetch("/api/proxy/users"),
         fetch("/api/proxy/countries"),
+        fetch("/api/proxy/companies"),
       ]);
       if (usersRes.ok) {
         const data = await usersRes.json();
@@ -42,6 +50,12 @@ export default function UsersPage() {
         const map: Record<number, string> = {};
         data.forEach((c) => { map[c.id] = c.name; });
         setCountryMap(map);
+      }
+      if (companiesRes.ok) {
+        const data: Company[] = await companiesRes.json();
+        const map: Record<number, string> = {};
+        data.forEach((c) => { map[c.id] = c.name; });
+        setCompanyMap(map);
       }
     } finally {
       setLoading(false);
@@ -96,6 +110,7 @@ export default function UsersPage() {
                   <th className="pb-2">Rôle</th>
                   <th className="pb-2">Statut</th>
                   <th className="pb-2">Pays</th>
+                  <th className="pb-2">Compagnie</th>
                   <th className="pb-2">Actions</th>
                 </tr>
               </thead>
@@ -117,6 +132,9 @@ export default function UsersPage() {
                     <td className="text-slate-600 text-xs">
                       {user.country_id ? (countryMap[user.country_id] ?? `#${user.country_id}`) : "—"}
                     </td>
+                    <td className="text-slate-600 text-xs">
+                      {user.company_id ? (companyMap[user.company_id] ?? `#${user.company_id}`) : "—"}
+                    </td>
                     <td className="space-x-2">
                       <Button size="sm" variant="outline" onClick={() => toggleActive(user)}>
                         {user.is_active ? "Désactiver" : "Activer"}
@@ -132,7 +150,7 @@ export default function UsersPage() {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-4 text-slate-400 text-center">
+                    <td colSpan={7} className="py-4 text-slate-400 text-center">
                       Aucun utilisateur
                     </td>
                   </tr>
