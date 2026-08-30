@@ -10,7 +10,7 @@ import { useCountry } from "@/contexts/country-context";
 import type { SourceOut } from "@/lib/api";
 
 export default function SourcesPage() {
-  const { selectedCountry } = useCountry();
+  const { selectedCountry, role } = useCountry();
   const [sources, setSources] = useState<SourceOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [testResults, setTestResults] = useState<Record<number, string>>({});
@@ -60,7 +60,9 @@ export default function SourcesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Sources</h1>
-        <SourceFormDialog onSaved={loadSources} countryId={selectedCountry?.id} />
+        {role === "super_admin" && (
+          <SourceFormDialog onSaved={loadSources} countryId={selectedCountry?.id} />
+        )}
       </div>
 
       <Card>
@@ -131,16 +133,20 @@ export default function SourcesPage() {
                       >
                         Tester
                       </Button>
-                      <SourceFormDialog
-                        source={source}
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            Modifier
-                          </Button>
-                        }
-                        onSaved={loadSources}
-                      />
-                      <DeleteSourceDialog source={source} onDeleted={loadSources} />
+                      {role === "super_admin" && (
+                        <>
+                          <SourceFormDialog
+                            source={source}
+                            trigger={
+                              <Button size="sm" variant="outline">
+                                Modifier
+                              </Button>
+                            }
+                            onSaved={loadSources}
+                          />
+                          <DeleteSourceDialog source={source} onDeleted={loadSources} />
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
