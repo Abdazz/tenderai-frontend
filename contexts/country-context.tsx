@@ -52,10 +52,13 @@ export function CountryProvider({ children, fixedCountryId, isSuperAdmin, role }
       return;
     }
 
+    let cancelled = false;
     setLoading(true);
-    fetch(`/api/proxy/companies/${selectedCompany.id}/countries`)
-      .then((r) => r.json())
-      .then((subs: { country_id: number; enabled: boolean }[]) => {
+
+    async function loadCountries() {
+      try {
+        const subsRes = await fetch(`/api/proxy/companies/${selectedCompany!.id}/countries`);
+        const subs: { country_id: number; enabled: boolean }[] = await subsRes.json();
         // The subscription endpoint returns {country_id, enabled} pairs, not
         // full Country objects (see CompanyCountrySubscriptionRead on the
         // backend) — cross-reference against the full catalog to get
@@ -63,28 +66,34 @@ export function CountryProvider({ children, fixedCountryId, isSuperAdmin, role }
         const subscribedIds = new Set(
           (Array.isArray(subs) ? subs : []).filter((s) => s.enabled).map((s) => s.country_id)
         );
-        fetch("/api/proxy/countries")
-          .then((r) => r.json())
-          .then((allCountries: Country[]) => {
-            const active = (Array.isArray(allCountries) ? allCountries : [])
-              .filter((c) => c.active && subscribedIds.has(c.id));
-            setCountries(active);
 
-            if (fixedCountryId) {
-              const found = active.find((c) => c.id === fixedCountryId) ?? null;
-              setSelectedCountryState(found);
-            } else {
-              const storedId = typeof window !== "undefined"
-                ? Number(localStorage.getItem("selectedCountryId"))
-                : 0;
-              const found = active.find((c) => c.id === storedId) ?? active[0] ?? null;
-              setSelectedCountryState(found);
-            }
-          })
-          .catch(() => setCountries([]));
-      })
-      .catch(() => setCountries([]))
-      .finally(() => setLoading(false));
+        const catalogRes = await fetch("/api/proxy/countries");
+        const allCountries: Country[] = await catalogRes.json();
+        if (cancelled) return;
+
+        const active = (Array.isArray(allCountries) ? allCountries : [])
+          .filter((c) => c.active && subscribedIds.has(c.id));
+        setCountries(active);
+
+        if (fixedCountryId) {
+          const found = active.find((c) => c.id === fixedCountryId) ?? null;
+          setSelectedCountryState(found);
+        } else {
+          const storedId = typeof window !== "undefined"
+            ? Number(localStorage.getItem("selectedCountryId"))
+            : 0;
+          const found = active.find((c) => c.id === storedId) ?? active[0] ?? null;
+          setSelectedCountryState(found);
+        }
+      } catch {
+        if (!cancelled) setCountries([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadCountries();
+    return () => { cancelled = true; };
   }, [fixedCountryId, selectedCompany?.id, companyLoading]);
 
   function setSelectedCountry(c: Country) {
