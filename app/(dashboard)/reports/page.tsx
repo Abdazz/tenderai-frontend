@@ -43,6 +43,7 @@ export default function ReportsPage() {
                 <th className="pb-2">Date</th>
                 <th className="pb-2">Items</th>
                 <th className="pb-2">Statut</th>
+                <th className="pb-2">Type</th>
                 <th className="pb-2">Action</th>
               </tr>
             </thead>
@@ -56,6 +57,11 @@ export default function ReportsPage() {
                     <Badge variant="default">{run.status}</Badge>
                   </td>
                   <td>
+                    <Badge variant={run.run_type === "harvest" ? "secondary" : "outline"}>
+                      {run.run_type === "harvest" ? "Collecte" : "Livraison"}
+                    </Badge>
+                  </td>
+                  <td>
                     <a
                       href={`/api/proxy/reports/${run.run_id}/download`}
                       className="text-blue-600 hover:underline text-xs"
@@ -67,7 +73,7 @@ export default function ReportsPage() {
               ))}
               {completed.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-4 text-slate-400 text-center">
+                  <td colSpan={6} className="py-4 text-slate-400 text-center">
                     Aucun rapport disponible
                   </td>
                 </tr>

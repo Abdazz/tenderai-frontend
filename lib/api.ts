@@ -91,6 +91,7 @@ export interface RunItem {
   finished_at?: string;
   duration_seconds?: number;
   stats?: { relevant_items: number };
+  run_type?: "harvest" | "delivery";
 }
 
 export const api = {
