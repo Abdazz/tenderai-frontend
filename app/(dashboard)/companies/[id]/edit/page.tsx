@@ -1,18 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function NewCompanyPage() {
+type CompanyForm = {
+  name: string;
+  slug: string;
+  logo_url: string;
+  subject_prefix: string;
+  signature: string;
+};
+
+export default function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", slug: "", logo_url: "", subject_prefix: "", signature: "" });
+  const [form, setForm] = useState<CompanyForm | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch(`/api/proxy/companies/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((data) =>
+        setForm({
+          name: data.name ?? "",
+          slug: data.slug ?? "",
+          logo_url: data.logo_url ?? "",
+          subject_prefix: data.subject_prefix ?? "",
+          signature: data.signature ?? "",
+        })
+      )
+      .catch(() => setError("Impossible de charger la compagnie."))
+      .finally(() => setLoading(false));
+  }, [id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.slug) {
-      setError("Nom et slug sont requis.");
+    if (!form) return;
+    if (!form.name) {
+      setError("Le nom est requis.");
       return;
     }
     setSaving(true);
@@ -20,19 +50,18 @@ export default function NewCompanyPage() {
     try {
       const body = {
         name: form.name,
-        slug: form.slug,
         logo_url: form.logo_url || null,
         subject_prefix: form.subject_prefix || null,
         signature: form.signature || null,
       };
-      const resp = await fetch("/api/proxy/companies", {
-        method: "POST",
+      const resp = await fetch(`/api/proxy/companies/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (!resp.ok) {
         const data = await resp.json();
-        setError(data.detail ?? "Erreur lors de la création.");
+        setError(data.detail ?? "Erreur lors de la sauvegarde.");
         return;
       }
       router.push("/companies");
@@ -41,9 +70,12 @@ export default function NewCompanyPage() {
     }
   }
 
+  if (loading) return <p className="text-slate-500">Chargement...</p>;
+  if (!form) return <p className="text-red-600 text-sm">{error ?? "Compagnie introuvable."}</p>;
+
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Nouvelle compagnie</h1>
+      <h1 className="text-2xl font-bold text-slate-800 mb-6">Modifier la compagnie</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
         <div>
@@ -52,7 +84,6 @@ export default function NewCompanyPage() {
             type="text"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="ex. Acme Corp"
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
             required
           />
@@ -62,11 +93,10 @@ export default function NewCompanyPage() {
           <input
             type="text"
             value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            placeholder="ex. acme-corp"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500"
-            required
+            disabled
+            className="w-full border border-slate-200 bg-slate-50 rounded-md px-3 py-2 text-sm font-mono text-slate-500 cursor-not-allowed"
           />
+          <p className="text-xs text-slate-400 mt-1">Le slug ne peut pas être modifié après la création.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">URL du logo (optionnel)</label>
@@ -106,7 +136,7 @@ export default function NewCompanyPage() {
             disabled={saving}
             className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? "Création..." : "Créer la compagnie"}
+            {saving ? "Sauvegarde..." : "Enregistrer"}
           </button>
           <button
             type="button"

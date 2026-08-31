@@ -125,6 +125,12 @@ export default function CompaniesPage() {
                     >
                       Pays abonnés
                     </button>
+                    <Link
+                      href={`/companies/${c.id}/edit`}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Éditer
+                    </Link>
                     <button
                       onClick={() => toggleActive(c)}
                       className="text-xs text-slate-500 hover:text-slate-700 underline"
