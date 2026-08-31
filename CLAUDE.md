@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Frontend Next.js de TenderAI BF. Communique avec le backend (`tenderai-backend`) exclusivement via HTTP (routes proxy dans `app/api/proxy/*`).
+Frontend Next.js de TenderAI. Communique avec le backend (`tenderai-backend`) exclusivement via HTTP (routes proxy dans `app/api/proxy/*`).
 
 Fait partie de l'architecture à 3 repos : `tenderai-backend`, `tenderai-frontend` (ce repo), `tenderai-infra`.
 
