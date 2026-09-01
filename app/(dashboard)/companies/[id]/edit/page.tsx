@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type CompanyForm = {
@@ -11,8 +11,8 @@ type CompanyForm = {
   signature: string;
 };
 
-export default function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function EditCompanyPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
   const [form, setForm] = useState<CompanyForm | null>(null);
   const [loading, setLoading] = useState(true);
