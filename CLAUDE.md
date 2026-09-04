@@ -2,7 +2,7 @@
 
 Frontend Next.js de TenderAI. Communique avec le backend (`tenderai-backend`) exclusivement via HTTP (routes proxy dans `app/api/proxy/*`).
 
-Fait partie de l'architecture à 3 repos : `tenderai-backend`, `tenderai-frontend` (ce repo), `tenderai-infra`.
+Fait partie de l'architecture à 3 repos : `tenderai-backend`, `tenderai-frontend` (ce repo), `tenderai-infra`. `tenderai-infra` est la racine — ce repo et `tenderai-backend` vivent comme sous-dossiers gitignorés à l'intérieur.
 
 ## Commands
 
