@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const DEDUP_METHODS = ["hash_only", "similarity_only", "hash_similarity", "llm_only", "hybrid"];
 
 export interface PipelineData {
-  max_items_per_run: number;
   min_relevance_score: number;
   deduplication_threshold: number;
   deduplication_method: string;
@@ -61,11 +60,6 @@ export function PipelineSection({ initialData, saveUrl = "/api/proxy/settings/pi
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Items max par run</Label>
-              <Input type="number" value={form.max_items_per_run} min={1} max={10000}
-                onChange={(e) => set("max_items_per_run", Number(e.target.value))} />
-            </div>
             <div className="space-y-1">
               <Label>Score de pertinence minimum (0–1)</Label>
               <Input type="number" value={form.min_relevance_score} min={0} max={1} step={0.01}
